@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNI Feedback AI — Evaluador de Videos A1</title>
+<style>
+:root{
+  --uni:#c8102e; --uni-dark:#8f0b22; --cream:#fff8f8; --ink:#252525;
+  --muted:#6d6d6d; --line:#ead8dc; --white:#fff; --ok:#176b4d;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f7f7f7;color:var(--ink)}
+header{background:linear-gradient(135deg,var(--uni-dark),var(--uni));color:white;padding:28px 7%}
+.logo{font-weight:800;letter-spacing:.5px;font-size:18px}
+h1{margin:10px 0 4px;font-size:30px}
+header p{margin:0;opacity:.9}
+main{max-width:1100px;margin:28px auto;padding:0 18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 5px 18px rgba(0,0,0,.05)}
+.full{grid-column:1/-1}
+label{display:block;font-size:13px;font-weight:700;margin:13px 0 6px}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid #d8d8d8;border-radius:10px;font:inherit;background:white}
+textarea{min-height:100px;resize:vertical}
+.drop{border:2px dashed #dca8b2;border-radius:12px;padding:22px;text-align:center;background:var(--cream)}
+.drop input{border:0;padding:0;margin-top:10px}
+.rubric{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center}
+button{border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}
+.primary{background:var(--uni);color:white;width:100%;font-size:16px}
+.secondary{background:#f2e8ea;color:var(--uni-dark)}
+.small{font-size:12px;color:var(--muted);line-height:1.45}
+.result{background:#fff8f8;border-left:5px solid var(--uni);padding:16px;border-radius:10px;white-space:pre-wrap;line-height:1.55;min-height:180px}
+.badge{display:inline-block;background:#f4e1e5;color:var(--uni-dark);padding:5px 9px;border-radius:20px;font-size:12px;font-weight:700}
+.actions{display:flex;gap:8px;margin-top:10px}
+.actions button{flex:1}
+footer{text-align:center;color:#777;font-size:12px;padding:25px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">UNIMINUTO · INNOVACIÓN DOCENTE</div>
+  <h1>UNI Feedback AI</h1>
+  <p>Asistente para la retroalimentación de videos de inglés A1</p>
+</header>
+
+<main>
+<div class="grid">
+
+<section class="card">
+  <span class="badge">1 · Estudiante</span>
+  <label>Nombre del estudiante</label>
+  <input id="student" placeholder="Ej. María Pérez">
+
+  <label>Actividad / tarea</label>
+  <input id="activity" placeholder="Ej. Task Based Oral Production">
+
+  <label>Nivel</label>
+  <select id="level"><option>A1</option><option>A2</option><option>B1</option></select>
+
+  <label>Video</label>
+  <div class="drop">
+    <div>📹 Selecciona el archivo del video</div>
+    <input id="video" type="file" accept="video/*">
+    <div id="fileInfo" class="small">El archivo queda en tu dispositivo; esta versión no lo sube automáticamente.</div>
+  </div>
+
+  <label>O pega el enlace del video</label>
+  <input id="url" placeholder="https://youtube.com/...">
+</section>
+
+<section class="card">
+  <span class="badge">2 · Rúbrica</span>
+  <p class="small">Puedes ajustar la nota de cada criterio. La herramienta calculará el promedio y preparará el feedback.</p>
+  <div class="rubric">
+    <label>Grammar</label><select class="score"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+    <label>Vocabulary</label><select class="score"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+    <label>Pronunciation</label><select class="score"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+    <label>Fluency</label><select class="score"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+    <label>Task completion</label><select class="score"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+  </div>
+
+  <label>Observaciones del docente</label>
+  <textarea id="notes" placeholder="Ej. Confunde he is / he are. Buena pronunciación. Habla con algunas pausas. Cumple con el tema solicitado."></textarea>
+</section>
+
+<section class="card full">
+  <span class="badge">3 · Generar retroalimentación</span>
+  <p class="small">
+    Esta versión crea automáticamente un <b>prompt pedagógico estructurado</b> para que una IA analice el video junto con tu rúbrica.
+    No inventa errores: le indica a la IA que diferencie entre lo observado y lo que no puede comprobar.
+  </p>
+  <button class="primary" onclick="generate()">✨ GENERAR FEEDBACK Y PROMPT DE IA</button>
+</section>
+
+<section class="card full">
+  <span class="badge">Resultado</span>
+  <div id="result" class="result">Aquí aparecerá el feedback inicial y el prompt listo para copiar en ChatGPT.</div>
+  <div class="actions">
+    <button class="secondary" onclick="copyResult()">📋 Copiar</button>
+    <button class="secondary" onclick="openChatGPT()">🤖 Abrir ChatGPT</button>
+  </div>
+  <p class="small">Para el análisis real del video: abre ChatGPT, adjunta el video allí y pega el prompt generado. Así no expones una clave API en una página local.</p>
+</section>
+
+</div>
+</main>
+<footer>Prototipo de nano innovación docente · UNIMINUTO · Uso docente con revisión humana obligatoria</footer>
+
+<script>
+let lastPrompt="";
+
+document.getElementById('video').addEventListener('change', function(){
+  const f=this.files[0];
+  document.getElementById('fileInfo').textContent=f
+    ? `Archivo seleccionado: ${f.name} · ${(f.size/1024/1024).toFixed(1)} MB`
+    : 'El archivo queda en tu dispositivo; esta versión no lo sube automáticamente.';
+});
+
+function generate(){
+  const student=document.getElementById('student').value.trim()||'Student';
+  const activity=document.getElementById('activity').value.trim()||'English speaking video';
+  const level=document.getElementById('level').value;
+  const url=document.getElementById('url').value.trim();
+  const notes=document.getElementById('notes').value.trim()||'No additional teacher observations.';
+  const scores=[...document.querySelectorAll('.score')].map(x=>Number(x.value));
+  const labels=['Grammar','Vocabulary','Pronunciation','Fluency','Task completion'];
+  const avg=(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+  const rubric=labels.map((x,i)=>`${x}: ${scores[i]}/5`).join('\n');
+
+  lastPrompt=`Act as an English A1 university teacher and evaluate the attached student video.
+
+STUDENT: ${student}
+ACTIVITY: ${activity}
+LEVEL: ${level}
+VIDEO LINK (if provided): ${url||'Not provided'}
+
+RUBRIC SCORES PROVIDED BY THE TEACHER:
+${rubric}
+AVERAGE: ${avg}/5
+
+TEACHER OBSERVATIONS:
+${notes}
+
+INSTRUCTIONS:
+1. Analyze ONLY what can actually be observed/heard in the video.
+2. Do not invent errors, pronunciation problems, or missing evidence.
+3. If something cannot be evaluated reliably, say so.
+4. Keep the language appropriate for an A1 learner.
+5. Produce:
+   A) 2 strengths.
+   B) Up to 3 specific improvement points, with a short example.
+   C) One practical next step.
+   D) A short encouraging feedback message in simple English (60-90 words).
+   E) A brief teacher-facing note in Spanish explaining the most important issue.
+6. Respect the teacher's rubric scores; do not replace them with a different grade unless there is clear evidence that warrants flagging a discrepancy.
+7. Never make the final pedagogical decision. The teacher reviews and approves the feedback before sending it to the student.
+
+Return the result with clear headings.`;
+
+  const preview=`FEEDBACK INICIAL\n\n${student} — ${activity}\nNivel: ${level}\nPromedio de rúbrica: ${avg}/5\n\nFortalezas sugeridas:\n• ${scores[0]>=4?'Buen manejo general de la gramática.':'Hay aspectos gramaticales que requieren práctica.'}\n• ${scores[2]>=4?'Pronunciación comprensible.':'Conviene reforzar pronunciación y claridad.'}\n\nSiguiente paso:\nRevisar los errores observados en el video y practicar 3–5 ejemplos similares.\n\nPROMPT PARA LA IA\n\n${lastPrompt}`;
+
+  document.getElementById('result').textContent=preview;
+}
+
+async function copyResult(){
+  const text=document.getElementById('result').textContent;
+  await navigator.clipboard.writeText(text);
+  alert('Copiado. Ahora puedes pegarlo en ChatGPT junto con el video.');
+}
+
+function openChatGPT(){
+  window.open('https://chatgpt.com/','_blank');
+}
+</script>
+</body>
+</html>
